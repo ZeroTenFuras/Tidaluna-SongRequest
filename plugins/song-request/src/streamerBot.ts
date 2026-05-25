@@ -96,7 +96,7 @@ export class StreamerBotSocket {
 		await this.sendRequest({
 			request: "SendMessage",
 			platform: "twitch",
-			bot: false,
+			bot: true,
 			internal: false,
 			message,
 		});

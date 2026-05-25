@@ -37,6 +37,9 @@ export async function sendTestReply() {
 }
 
 async function sendReply(message: string) {
-	if (!socket) return;
-	await socket.sendChatMessage(message).catch(trace.err.withContext("Streamer.bot SendMessage"));
+	if (!socket) throw new Error("Streamer.bot websocket is not connected");
+	await socket.sendChatMessage(message).catch((error) => {
+		trace.err.withContext("Streamer.bot SendMessage")(error);
+		throw error;
+	});
 }

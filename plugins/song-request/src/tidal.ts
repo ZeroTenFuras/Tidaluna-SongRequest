@@ -1,7 +1,7 @@
 import { MediaItem, PlayState, redux, TidalApi } from "@luna/lib";
 
 import { settings } from "./storage";
-import { trace } from "./trace";
+import { trace, unloads } from "./trace";
 
 type SearchTracksResponse = {
 	items?: redux.Track[];
@@ -35,14 +35,13 @@ export async function addTrackToQueue(track: ResolvedTrack) {
 	await MediaItem.fromId(track.id, "track");
 
 	if (settings.autoPlayWhenIdle && isPlayerIdle()) {
+		trace.msg.log(`Starting requested track ${track.id} because the player is idle.`);
 		PlayState.play(track.id);
 		return;
 	}
 
-	redux.actions["playQueue/ADD_LAST"]({
-		context: { type: "search" },
-		mediaItemIds: [track.id],
-	});
+	trace.msg.log(`Adding requested track ${track.id} to the TIDAL queue.`);
+	PlayState.playNext(track.id);
 }
 
 export function isTrackInQueue(trackId: redux.ItemId) {
@@ -63,22 +62,47 @@ async function resolveTrackById(trackId: redux.ItemId) {
 }
 
 async function searchTrack(query: string) {
+	const response = await searchTrackWithRedux(query).catch(trace.err.withContext("TIDAL redux search"));
+	const reduxTracks = response?.tracks.items ?? [];
+	trace.msg.log(`TIDAL search for "${query}" returned ${reduxTracks.length} track(s).`);
+
+	const reduxTrack = pickBestTrack(reduxTracks);
+	if (reduxTrack !== undefined) return reduxTrack;
+
+	const apiTracks = await searchTrackWithApi(query);
+	return pickBestTrack(apiTracks);
+}
+
+async function searchTrackWithRedux(query: string) {
+	return redux.interceptActionResp(
+		() => redux.actions["search/SEARCH_TRACK_FOR_TRACK_PICKER"]({ searchPhrase: query, limit: 5 }),
+		unloads,
+		["search/SEARCH_RESULT_SUCCESS"],
+		["search/SEARCH_RESULT_FAIL"],
+		{ timeoutMs: 10000 },
+	);
+}
+
+async function searchTrackWithApi(query: string) {
 	const encodedQuery = encodeURIComponent(query);
 	const queryArgs = TidalApi.queryArgs();
 	const urls = [
 		`https://desktop.tidal.com/v1/search/tracks?query=${encodedQuery}&limit=5&offset=0&${queryArgs}`,
 		`https://desktop.tidal.com/v1/search?query=${encodedQuery}&types=TRACKS&limit=5&offset=0&${queryArgs}`,
 	];
+	const tracks: redux.Track[] = [];
 
 	for (const url of urls) {
-		const response = await TidalApi.fetch<SearchTracksResponse>(url).catch(trace.err.withContext("TIDAL search"));
-		const tracks = response?.items ?? response?.tracks?.items ?? [];
-		const streamableTrack = tracks.find(isTrackStreamable);
-		if (streamableTrack !== undefined) return streamableTrack;
-		if (tracks[0] !== undefined) return tracks[0];
+		const response = await TidalApi.fetch<SearchTracksResponse>(url).catch(trace.err.withContext("TIDAL API search"));
+		tracks.push(...(response?.items ?? response?.tracks?.items ?? []));
 	}
 
-	return undefined;
+	trace.msg.log(`TIDAL API fallback search for "${query}" returned ${tracks.length} track(s).`);
+	return tracks;
+}
+
+function pickBestTrack(tracks: redux.Track[]) {
+	return tracks.find(isTrackStreamable) ?? tracks[0];
 }
 
 function toResolvedTrack(track: redux.Track): ResolvedTrack {

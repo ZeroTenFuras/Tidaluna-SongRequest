@@ -1,6 +1,6 @@
 import { MediaItem, PlayState, redux, TidalApi } from "@luna/lib";
 
-import { settings } from "./settings";
+import { settings } from "./storage";
 import { trace } from "./trace";
 
 type SearchTracksResponse = {
@@ -47,7 +47,7 @@ export async function addTrackToQueue(track: ResolvedTrack) {
 
 export function isTrackInQueue(trackId: redux.ItemId) {
 	const id = String(trackId);
-	return PlayState.playQueue.elements.some((element) => String(element.mediaItemId) === id);
+	return PlayState.playQueue.elements.some((element: redux.PlayQueueElement) => String(element.mediaItemId) === id);
 }
 
 export function formatDuration(seconds: number) {

@@ -1,4 +1,4 @@
-import { settings } from "./settings";
+import { settings } from "./storage";
 import { enqueueChatMessage } from "./songRequests";
 import { StreamerBotSocket } from "./streamerBot";
 import { trace } from "./trace";

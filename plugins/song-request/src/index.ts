@@ -1,7 +1,7 @@
 import { MediaItem } from "@luna/lib";
 
 import { restartStreamerBot, startStreamerBot, stopStreamerBot } from "./runtime";
-import { settings } from "./settings";
+import { settings } from "./storage";
 import { markTrackStarted } from "./songRequests";
 import { trace, unloads } from "./trace";
 

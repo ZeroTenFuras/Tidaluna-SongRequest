@@ -1,6 +1,6 @@
 import { redux } from "@luna/lib";
 
-import { settings } from "./settings";
+import { settings } from "./storage";
 import type { TwitchChatMessage } from "./streamerBot";
 import { addTrackToQueue, formatDuration, isTrackInQueue, resolveTrack, type ResolvedTrack } from "./tidal";
 import { trace } from "./trace";
@@ -46,6 +46,7 @@ async function handleChatMessage(message: TwitchChatMessage, reply: ReplySender)
 	const userName = message.user?.name ?? message.user?.login ?? "viewer";
 	const userKey = message.user?.id ?? message.user?.login ?? userName;
 
+	pruneRequestsNoLongerQueued();
 	if (isUserAtRequestLimit(userKey)) {
 		await safeReply(reply, `@${userName}, you already have ${settings.maxRequestsPerUser} song request(s) waiting in the queue.`);
 		return;
@@ -88,6 +89,12 @@ function getTrackRejection(track: ResolvedTrack) {
 	}
 
 	return undefined;
+}
+
+function pruneRequestsNoLongerQueued() {
+	for (let index = requestQueue.length - 1; index >= 0; index--) {
+		if (!isTrackInQueue(requestQueue[index].trackId)) requestQueue.splice(index, 1);
+	}
 }
 
 function isUserAtRequestLimit(userKey: string) {

@@ -119,8 +119,8 @@ function getMatchingCommand(text: string) {
 }
 
 function getRequestCommands() {
-	const commands = [settings.command, defaultSettings.command].flatMap(parseCommands);
-	return [...new Set(commands)];
+	const commands = parseCommands(settings.command);
+	return commands.length > 0 ? [...new Set(commands)] : [defaultSettings.command];
 }
 
 function parseCommands(commandValue: string) {

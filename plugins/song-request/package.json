@@ -1,5 +1,5 @@
 {
-	"name": "@tidaluna/song-request",
+	"name": "@zerotenfuras/song-request",
 	"description": "Let Twitch chat add TIDAL tracks to the TidaLuna queue through Streamer.bot.",
 	"author": {
 		"name": "ZeroTenFuras"

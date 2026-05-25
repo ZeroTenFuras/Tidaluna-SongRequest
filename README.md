@@ -39,12 +39,12 @@ oraz `.mjs`.
 Po opublikowaniu release `latest` uzyj jednego z tych adresow:
 
 - pojedynczy plugin:
-  `https://github.com/ZeroTenFuras/Tidaluna-SongRequest/releases/download/latest/tidaluna.song-request`
+  `https://github.com/ZeroTenFuras/Tidaluna-SongRequest/releases/download/latest/zerotenfuras.song-request`
 - plugin store:
   `https://github.com/ZeroTenFuras/Tidaluna-SongRequest/releases/download/latest/store.json`
 
 Adres pojedynczego pluginu celowo nie ma rozszerzenia. TidaLuna pobierze z niego
-`tidaluna.song-request.json` i `tidaluna.song-request.mjs`.
+`zerotenfuras.song-request.json` i `zerotenfuras.song-request.mjs`.
 
 ## Ustawienia pluginu
 
@@ -80,4 +80,4 @@ Podczas developmentu mozna uzyc:
 pnpm run watch
 ```
 
-TidaLuna powinna pokazac lokalny sklep DEV z `http://127.0.0.1:3000`.
+TidaLuna powinna pokazac lokalny sklep DEV z `http://127.0.0.1:3000` albo pojedynczy plugin z `http://127.0.0.1:3000/zerotenfuras.song-request`.

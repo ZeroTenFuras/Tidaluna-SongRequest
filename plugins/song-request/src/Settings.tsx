@@ -8,7 +8,7 @@ import {
 	LunaTextSetting,
 } from "@luna/ui";
 
-import { restartStreamerBot, stopStreamerBot } from "./runtime";
+import { restartStreamerBot, sendTestReply, stopStreamerBot } from "./runtime";
 import { settings } from "./storage";
 
 type TextChange = React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
@@ -120,6 +120,7 @@ export const Settings = () => {
 				onChange={(_: SwitchChange, checked?: boolean) => setAutoPlayWhenIdle((settings.autoPlayWhenIdle = checked ?? false))}
 			/>
 			<LunaButtonSetting title="Reconnect to Streamer.bot" desc="Reconnect after changing connection settings." onClick={reconnect} />
+			<LunaButtonSetting title="Send test chat reply" desc="Send a test message through Streamer.bot using the configured bot account." onClick={() => sendTestReply()} />
 		</LunaSettings>
 	);
 };

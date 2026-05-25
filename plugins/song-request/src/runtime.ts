@@ -32,6 +32,10 @@ export function restartStreamerBot() {
 	startStreamerBot();
 }
 
+export async function sendTestReply() {
+	await sendReply("TidaLuna song request plugin test message.");
+}
+
 async function sendReply(message: string) {
 	if (!socket) return;
 	await socket.sendChatMessage(message).catch(trace.err.withContext("Streamer.bot SendMessage"));

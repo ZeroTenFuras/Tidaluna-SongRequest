@@ -36,10 +36,11 @@ async function handleChatMessage(message: TwitchChatMessage, reply: ReplySender)
 	const text = getMessageText(message)?.trim();
 	if (!text) return;
 
-	const command = getMatchingCommand(text);
-	if (command === undefined) return;
+	const request = parseRequestMessage(text);
+	if (request === undefined) return;
 
-	const query = text.slice(command.length).trim();
+	const { command, query } = request;
+	trace.msg.log(`Matched song request command ${command}`);
 	if (!query) {
 		await safeReply(reply, `Usage: ${command} artist - song or ${command} https://tidal.com/track/123`);
 		return;
@@ -127,8 +128,18 @@ async function safeReply(reply: ReplySender, message: string) {
 	await Promise.resolve(reply(message)).catch(trace.err.withContext("Send Streamer.bot chat reply"));
 }
 
-function getMatchingCommand(text: string) {
-	return getRequestCommands().find((command) => matchesCommand(text, command));
+function parseRequestMessage(text: string) {
+	const match = normalizeWhitespace(text).match(/^(\S+)(?:\s+([\s\S]*))?$/);
+	if (!match) return undefined;
+
+	const messageCommand = normalizeCommandToken(match[1]);
+	const command = getRequestCommands().find((configuredCommand) => normalizeCommandToken(configuredCommand) === messageCommand);
+	if (command === undefined) return undefined;
+
+	return {
+		command,
+		query: match[2]?.trim() ?? "",
+	};
 }
 
 function getRequestCommands() {
@@ -136,21 +147,23 @@ function getRequestCommands() {
 	return commands.length > 0 ? [...new Set(commands)] : [defaultSettings.command];
 }
 
-function parseCommands(commandValue: string) {
-	return commandValue
+function parseCommands(commandValue: string | undefined) {
+	return (commandValue ?? "")
 		.split(/[\s,;|]+/)
 		.map(normalizeCommand)
 		.filter((command): command is string => command !== undefined);
 }
 
 function normalizeCommand(command: string) {
-	const normalized = command.trim();
+	const normalized = normalizeWhitespace(command);
 	if (normalized === "") return undefined;
 	return normalized.startsWith("!") ? normalized : `!${normalized}`;
 }
 
-function matchesCommand(text: string, command: string) {
-	const lowerText = text.toLowerCase();
-	const lowerCommand = command.toLowerCase();
-	return lowerText === lowerCommand || lowerText.startsWith(`${lowerCommand} `);
+function normalizeCommandToken(command: string) {
+	return normalizeWhitespace(command).toLowerCase();
+}
+
+function normalizeWhitespace(value: string) {
+	return value.replace(/[\u200B-\u200D\uFEFF]/g, "").trim();
 }

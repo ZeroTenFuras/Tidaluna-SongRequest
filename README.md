@@ -55,7 +55,7 @@ Po instalacji otworz **Luna Settings -> Tidaluna Song Request**:
 - **Request command** - domyslnie `!sr`; po wpisaniu np. `!srt` aktywna bedzie tylko `!srt`. Jesli chcesz aliasy, wpisz kilka komend rozdzielonych spacja albo przecinkiem, np. `!srt !sr`.
 - **Max song length** - limit w sekundach; `0` wylacza limit.
 - **Max queued requests per user** - limit oczekujacych requestow; `0` wylacza limit.
-- **Send chat replies** - wysyla komunikaty powodzenia/bledu na chat przez skonfigurowany bot account w streamer.bot.
+- **Send chat replies** - wysyla komunikaty powodzenia/bledu na chat przez skonfigurowany bot account w streamer.bot. Przycisk **Send test chat reply** pozwala sprawdzic samo wysylanie przez Streamer.bot bez requestowania utworu.
 - **Allow duplicate requests** - pozwala requestowac ten sam utwor ponownie.
 - **Auto-play when idle** - startuje pierwszy request, gdy TIDAL nic nie gra.
 

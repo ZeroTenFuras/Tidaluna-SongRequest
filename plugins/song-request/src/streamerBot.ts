@@ -7,11 +7,16 @@ type StreamerBotRequest = Record<string, unknown> & {
 type PendingRequest = {
 	resolve: (message: StreamerBotMessage) => void;
 	reject: (error: Error) => void;
+	timeout: ReturnType<typeof setTimeout>;
 };
 
 export type TwitchChatMessage = {
-	text?: string | null;
+	text?: unknown;
+	message?: unknown;
+	rawInput?: unknown;
+	input?: unknown;
 	messageId?: string | null;
+	parts?: Array<{ text?: unknown }> | null;
 	user?: {
 		id?: string | null;
 		login?: string | null;
@@ -104,6 +109,7 @@ export class StreamerBotSocket {
 
 		if (message.id !== undefined && this.pending.has(message.id)) {
 			const pending = this.pending.get(message.id)!;
+			clearTimeout(pending.timeout);
 			this.pending.delete(message.id);
 			if (message.status === "error") pending.reject(new Error(message.error ?? `Streamer.bot request ${message.id} failed`));
 			else pending.resolve(message);
@@ -154,15 +160,22 @@ export class StreamerBotSocket {
 
 		const id = `tidaluna-song-request-${++this.requestId}`;
 		const request = { id, ...payload };
-		websocket.send(JSON.stringify(request));
 
 		return new Promise<StreamerBotMessage>((resolve, reject) => {
-			this.pending.set(id, { resolve, reject });
-			setTimeout(() => {
+			const timeout = setTimeout(() => {
 				if (!this.pending.has(id)) return;
 				this.pending.delete(id);
 				reject(new Error(`Streamer.bot request timed out: ${payload.request}`));
 			}, 10000);
+
+			this.pending.set(id, { resolve, reject, timeout });
+			try {
+				websocket.send(JSON.stringify(request));
+			} catch (error) {
+				clearTimeout(timeout);
+				this.pending.delete(id);
+				reject(error instanceof Error ? error : new Error(String(error)));
+			}
 		});
 	}
 
@@ -175,7 +188,10 @@ export class StreamerBotSocket {
 	}
 
 	private rejectPending(error: Error) {
-		for (const pending of this.pending.values()) pending.reject(error);
+		for (const pending of this.pending.values()) {
+			clearTimeout(pending.timeout);
+			pending.reject(error);
+		}
 		this.pending.clear();
 	}
 

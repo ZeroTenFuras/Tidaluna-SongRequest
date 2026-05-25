@@ -52,7 +52,7 @@ Po instalacji otworz **Luna Settings -> Tidaluna Song Request**:
 
 - **Streamer.bot host/port/endpoint** - dane WebSocket Server.
 - **Streamer.bot password** - haslo WebSocket, jesli jest wlaczone.
-- **Request command** - domyslnie `!sr`.
+- **Request command** - domyslnie `!sr`; po wpisaniu np. `!srt` aktywna bedzie tylko `!srt`. Jesli chcesz aliasy, wpisz kilka komend rozdzielonych spacja albo przecinkiem, np. `!srt !sr`.
 - **Max song length** - limit w sekundach; `0` wylacza limit.
 - **Max queued requests per user** - limit oczekujacych requestow; `0` wylacza limit.
 - **Send chat replies** - wysyla komunikaty powodzenia/bledu na chat.

@@ -1,6 +1,6 @@
 import { redux } from "@luna/lib";
 
-import { settings } from "./storage";
+import { defaultSettings, settings } from "./storage";
 import type { TwitchChatMessage } from "./streamerBot";
 import { addTrackToQueue, formatDuration, isTrackInQueue, resolveTrack, type ResolvedTrack } from "./tidal";
 import { trace } from "./trace";
@@ -33,9 +33,11 @@ export function markTrackStarted(trackId: redux.ItemId) {
 async function handleChatMessage(message: TwitchChatMessage, reply: ReplySender) {
 	if (!settings.enabled) return;
 
-	const command = normalizeCommand(settings.command);
 	const text = message.text?.trim();
-	if (!text || !matchesCommand(text, command)) return;
+	if (!text) return;
+
+	const command = getMatchingCommand(text);
+	if (command === undefined) return;
 
 	const query = text.slice(command.length).trim();
 	if (!query) {
@@ -112,9 +114,26 @@ async function safeReply(reply: ReplySender, message: string) {
 	await Promise.resolve(reply(message)).catch(trace.err.withContext("Send Streamer.bot chat reply"));
 }
 
+function getMatchingCommand(text: string) {
+	return getRequestCommands().find((command) => matchesCommand(text, command));
+}
+
+function getRequestCommands() {
+	const commands = parseCommands(settings.command);
+	return commands.length > 0 ? [...new Set(commands)] : [defaultSettings.command];
+}
+
+function parseCommands(commandValue: string) {
+	return commandValue
+		.split(/[\s,;|]+/)
+		.map(normalizeCommand)
+		.filter((command): command is string => command !== undefined);
+}
+
 function normalizeCommand(command: string) {
 	const normalized = command.trim();
-	return normalized === "" ? "!sr" : normalized;
+	if (normalized === "") return undefined;
+	return normalized.startsWith("!") ? normalized : `!${normalized}`;
 }
 
 function matchesCommand(text: string, command: string) {

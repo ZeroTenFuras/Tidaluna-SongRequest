@@ -5,7 +5,7 @@
 	"private": true,
 	"scripts": {
 		"watch": "concurrently \"pnpm:build --watch\" pnpm:serve",
-		"build": "rimraf ./dist && tsx esbuild.config.ts",
+		"build": "rimraf ./dist && tsx esbuild.config.ts && node scripts/patch-luna-dependency-shim.mjs",
 		"serve": "http-server ./dist -p 3000 -s --cors -c-1"
 	},
 	"devDependencies": {

@@ -29,6 +29,23 @@ widzom Twitcha dodawac piosenki z TIDAL-a do kolejki komenda na chacie.
 Plugin subskrybuje event `Twitch.ChatMessage` i sam rozpoznaje komende, wiec nie
 musisz tworzyc osobnych akcji/komend w streamer.bot.
 
+## Instalacja w TidaLuna
+
+Nie wklejaj do TidaLuna adresu repozytorium GitHub, np.
+`https://github.com/ZeroTenFuras/Tidaluna-SongRequest`. TidaLuna oczekuje
+adresu bazowego zbudowanego artefaktu pluginu i sama dopisuje do niego `.json`
+oraz `.mjs`.
+
+Po opublikowaniu release `latest` uzyj jednego z tych adresow:
+
+- pojedynczy plugin:
+  `https://github.com/ZeroTenFuras/Tidaluna-SongRequest/releases/download/latest/tidaluna.song-request`
+- plugin store:
+  `https://github.com/ZeroTenFuras/Tidaluna-SongRequest/releases/download/latest/store.json`
+
+Adres pojedynczego pluginu celowo nie ma rozszerzenia. TidaLuna pobierze z niego
+`tidaluna.song-request.json` i `tidaluna.song-request.mjs`.
+
 ## Ustawienia pluginu
 
 Po instalacji otworz **Luna Settings -> Tidaluna Song Request**:

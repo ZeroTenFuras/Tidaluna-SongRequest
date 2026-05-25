@@ -19,5 +19,10 @@
 		"rimraf": "^6.1.2",
 		"tsx": "^4.21.0",
 		"typescript": "^5.9.3"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"esbuild"
+		]
 	}
 }

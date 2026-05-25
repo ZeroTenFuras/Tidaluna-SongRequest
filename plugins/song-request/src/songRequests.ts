@@ -33,7 +33,7 @@ export function markTrackStarted(trackId: redux.ItemId) {
 async function handleChatMessage(message: TwitchChatMessage, reply: ReplySender) {
 	if (!settings.enabled) return;
 
-	const text = message.text?.trim();
+	const text = getMessageText(message)?.trim();
 	if (!text) return;
 
 	const command = getMatchingCommand(text);
@@ -77,6 +77,19 @@ async function handleChatMessage(message: TwitchChatMessage, reply: ReplySender)
 	});
 
 	await safeReply(reply, `@${userName}, added "${track.title}" by ${track.artists} to the TIDAL queue.`);
+}
+
+
+function getMessageText(message: TwitchChatMessage) {
+	for (const value of [message.text, message.message, message.rawInput, message.input]) {
+		if (typeof value === "string" && value.trim() !== "") return value;
+	}
+
+	const partsText = message.parts
+		?.map((part) => (typeof part.text === "string" ? part.text : ""))
+		.join("")
+		.trim();
+	return partsText || undefined;
 }
 
 function getTrackRejection(track: ResolvedTrack) {

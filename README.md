@@ -12,7 +12,7 @@ widzom Twitcha dodawac piosenki z TIDAL-a do kolejki komenda na chacie.
 - opcjonalne auto-play, kiedy kolejka TIDAL-a jest pusta;
 - limity maksymalnej dlugosci utworu i liczby oczekujacych requestow per user;
 - blokowanie duplikatow w kolejce requestow;
-- opcjonalne odpowiedzi na Twitch chat przez `SendMessage` streamer.bot.
+- opcjonalne odpowiedzi na Twitch chat przez `SendMessage` streamer.bot, wysylane domyslnie kontem broadcastera.
 
 ## Konfiguracja streamer.bot
 
@@ -55,7 +55,7 @@ Po instalacji otworz **Luna Settings -> Tidaluna Song Request**:
 - **Request command** - domyslnie `!sr`; po wpisaniu np. `!srt` aktywna bedzie tylko `!srt`. Jesli chcesz aliasy, wpisz kilka komend rozdzielonych spacja albo przecinkiem, np. `!srt !sr`.
 - **Max song length** - limit w sekundach; `0` wylacza limit.
 - **Max queued requests per user** - limit oczekujacych requestow; `0` wylacza limit.
-- **Send chat replies** - wysyla komunikaty powodzenia/bledu na chat.
+- **Send chat replies** - wysyla komunikaty powodzenia/bledu na chat przez konto broadcastera w streamer.bot.
 - **Allow duplicate requests** - pozwala requestowac ten sam utwor ponownie.
 - **Auto-play when idle** - startuje pierwszy request, gdy TIDAL nic nie gra.
 

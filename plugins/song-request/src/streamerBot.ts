@@ -10,8 +10,12 @@ type PendingRequest = {
 };
 
 export type TwitchChatMessage = {
-	text?: string | null;
+	text?: unknown;
+	message?: unknown;
+	rawInput?: unknown;
+	input?: unknown;
 	messageId?: string | null;
+	parts?: Array<{ text?: unknown }> | null;
 	user?: {
 		id?: string | null;
 		login?: string | null;
@@ -92,7 +96,7 @@ export class StreamerBotSocket {
 		await this.sendRequest({
 			request: "SendMessage",
 			platform: "twitch",
-			bot: true,
+			bot: false,
 			internal: false,
 			message,
 		});

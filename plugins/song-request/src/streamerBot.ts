@@ -54,6 +54,8 @@ export class StreamerBotSocket {
 	private reconnectTimer?: ReturnType<typeof setTimeout>;
 	private pending = new Map<string, PendingRequest>();
 	private subscribed = false;
+	private authenticated = false;
+	private authenticationOffered = false;
 	private closedIntentionally = false;
 
 	constructor(
@@ -70,6 +72,8 @@ export class StreamerBotSocket {
 		trace.msg.log(`Connecting to Streamer.bot at ${url}`);
 		this.websocket = new WebSocket(url);
 		this.subscribed = false;
+		this.authenticated = false;
+		this.authenticationOffered = false;
 
 		this.websocket.addEventListener("message", (event) => {
 			this.handleRawMessage(event.data).catch(trace.err.withContext("Streamer.bot message"));
@@ -91,16 +95,22 @@ export class StreamerBotSocket {
 		this.websocket?.close();
 		this.websocket = undefined;
 		this.subscribed = false;
+		this.authenticated = false;
+		this.authenticationOffered = false;
 	}
 
 	public async sendChatMessage(message: string) {
-		await this.sendRequest({
-			request: "SendMessage",
-			platform: "twitch",
-			bot: true,
-			internal: false,
-			message,
-		});
+		try {
+			await this.sendRequest({
+				request: "SendMessage",
+				platform: "twitch",
+				bot: true,
+				internal: false,
+				message,
+			});
+		} catch (error) {
+			throw this.toSendMessageError(error);
+		}
 	}
 
 	private async handleRawMessage(raw: unknown) {
@@ -131,11 +141,14 @@ export class StreamerBotSocket {
 		const password = this.getConfig().password;
 
 		if (auth?.salt && auth.challenge) {
+			this.authenticationOffered = true;
 			if (!password) {
-				trace.msg.warn("Streamer.bot requested websocket authentication, but no password is configured.");
+				trace.msg.warn("Streamer.bot requested websocket authentication, but no password is configured. Chat events can still work, but SendMessage will fail.");
 			} else {
 				const authentication = await this.makeAuthentication(password, auth.salt, auth.challenge);
 				await this.sendRequest({ request: "Authenticate", authentication });
+				this.authenticated = true;
+				trace.msg.log("Authenticated with Streamer.bot websocket server.");
 			}
 		}
 
@@ -152,6 +165,23 @@ export class StreamerBotSocket {
 		});
 		this.subscribed = true;
 		trace.msg.log("Subscribed to Streamer.bot Twitch.ChatMessage events");
+	}
+
+
+	private toSendMessageError(error: unknown) {
+		const message = error instanceof Error ? error.message : String(error);
+		if (/authentication required/i.test(message)) {
+			const authHint = this.authenticationOffered
+				? "Streamer.bot offered WebSocket authentication, but this plugin is not authenticated. Enter the WebSocket Server password in the plugin settings and click Reconnect to Streamer.bot."
+				: "Streamer.bot says SendMessage requires authentication. Enable/configure WebSocket authentication in Streamer.bot, enter the same password in the plugin settings, and click Reconnect to Streamer.bot.";
+			return new Error(`${authHint} Original error: ${message}`);
+		}
+
+		if (this.authenticationOffered && !this.authenticated) {
+			return new Error(`Streamer.bot SendMessage failed before websocket authentication completed. Enter the WebSocket Server password in the plugin settings and reconnect. Original error: ${message}`);
+		}
+
+		return error instanceof Error ? error : new Error(message);
 	}
 
 	private sendRequest(payload: StreamerBotRequest) {

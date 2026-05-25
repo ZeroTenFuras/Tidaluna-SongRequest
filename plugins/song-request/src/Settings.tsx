@@ -70,7 +70,7 @@ export const Settings = () => {
 			<LunaTextSetting
 				type="password"
 				title="Streamer.bot password"
-				desc="Only needed if WebSocket authentication is enabled or if chat replies should use SendMessage."
+				desc="Required when Streamer.bot reports that SendMessage needs authentication. After changing it, click Reconnect to Streamer.bot."
 				value={password}
 				onChange={(event: TextChange) => setPassword((settings.password = event.target.value))}
 				onBlur={reconnect}
@@ -122,7 +122,7 @@ export const Settings = () => {
 			<LunaButtonSetting title="Reconnect to Streamer.bot" desc="Reconnect after changing connection settings." onClick={reconnect} />
 			<LunaButtonSetting
 				title="Send test chat reply"
-				desc="Send a test message through Streamer.bot using the configured bot account. A popup will show whether Streamer.bot accepted the request."
+				desc="Send a test message through Streamer.bot using the configured bot account. If authentication is required, the popup will explain what to configure."
 				onClick={() => {
 					sendTestReply()
 						.then(() => alert("Streamer.bot accepted the test chat reply request."))

@@ -22,8 +22,7 @@ widzom Twitcha dodawac piosenki z TIDAL-a do kolejki komenda na chacie.
    - Address: `127.0.0.1`
    - Port: `8080`
    - Endpoint: `/`
-4. Jesli wlaczasz **Authentication** albo chcesz wysylac odpowiedzi na chat,
-   ustaw haslo i wpisz je w ustawieniach pluginu w TidaLuna.
+4. Jesli streamer.bot zwraca przy tescie czatu `Authentication required`, wlacz/skonfiguruj **Authentication** w WebSocket Server, ustaw haslo i wpisz to samo haslo w ustawieniach pluginu w TidaLuna. Po zmianie hasla kliknij **Reconnect to Streamer.bot**.
 5. Upewnij sie, ze streamer.bot jest polaczony z Twitchem.
 
 Plugin subskrybuje event `Twitch.ChatMessage` i sam rozpoznaje komende, wiec nie
@@ -55,7 +54,7 @@ Po instalacji otworz **Luna Settings -> Tidaluna Song Request**:
 - **Request command** - domyslnie `!sr`; po wpisaniu np. `!srt` aktywna bedzie tylko `!srt`. Jesli chcesz aliasy, wpisz kilka komend rozdzielonych spacja albo przecinkiem, np. `!srt !sr`.
 - **Max song length** - limit w sekundach; `0` wylacza limit.
 - **Max queued requests per user** - limit oczekujacych requestow; `0` wylacza limit.
-- **Send chat replies** - wysyla komunikaty powodzenia/bledu na chat przez skonfigurowany bot account w streamer.bot. Przycisk **Send test chat reply** pozwala sprawdzic samo wysylanie przez Streamer.bot bez requestowania utworu.
+- **Send chat replies** - wysyla komunikaty powodzenia/bledu na chat przez skonfigurowany bot account w streamer.bot. Przycisk **Send test chat reply** pozwala sprawdzic samo wysylanie przez Streamer.bot bez requestowania utworu i pokazuje konkretny blad auth, jesli brakuje hasla WebSocket.
 - **Allow duplicate requests** - pozwala requestowac ten sam utwor ponownie.
 - **Auto-play when idle** - startuje pierwszy request, gdy TIDAL nic nie gra.
 

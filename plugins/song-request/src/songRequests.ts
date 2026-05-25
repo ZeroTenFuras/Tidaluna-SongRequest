@@ -55,29 +55,37 @@ async function handleChatMessage(message: TwitchChatMessage, reply: ReplySender)
 		return;
 	}
 
-	const track = await resolveTrack(query);
-	if (track === undefined) {
-		await safeReply(reply, `@${userName}, I could not find a TIDAL track for "${query}".`);
-		return;
+	try {
+		const track = await resolveTrack(query);
+		if (track === undefined) {
+			trace.msg.warn(`No TIDAL track found for request "${query}".`);
+			await safeReply(reply, `@${userName}, I could not find a TIDAL track for "${query}".`);
+			return;
+		}
+
+		trace.msg.log(`Resolved song request "${query}" to ${track.id}: ${track.title} by ${track.artists}.`);
+		const rejection = getTrackRejection(track);
+		if (rejection !== undefined) {
+			trace.msg.warn(`Rejected song request ${track.id}: ${rejection}`);
+			await safeReply(reply, `@${userName}, ${rejection}`);
+			return;
+		}
+
+		await addTrackToQueue(track);
+		requestQueue.push({
+			trackId: track.id,
+			userKey,
+			userName,
+			trackTitle: track.title,
+			artists: track.artists,
+			addedAt: Date.now(),
+		});
+
+		await safeReply(reply, `@${userName}, added "${track.title}" by ${track.artists} to the TIDAL queue.`);
+	} catch (error) {
+		trace.msg.err.withContext(`Failed to process song request "${query}"`)(error);
+		await safeReply(reply, `@${userName}, I hit an error while adding that TIDAL request.`);
 	}
-
-	const rejection = getTrackRejection(track);
-	if (rejection !== undefined) {
-		await safeReply(reply, `@${userName}, ${rejection}`);
-		return;
-	}
-
-	await addTrackToQueue(track);
-	requestQueue.push({
-		trackId: track.id,
-		userKey,
-		userName,
-		trackTitle: track.title,
-		artists: track.artists,
-		addedAt: Date.now(),
-	});
-
-	await safeReply(reply, `@${userName}, added "${track.title}" by ${track.artists} to the TIDAL queue.`);
 }
 
 

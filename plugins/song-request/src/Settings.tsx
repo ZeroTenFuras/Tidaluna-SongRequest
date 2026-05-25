@@ -120,7 +120,15 @@ export const Settings = () => {
 				onChange={(_: SwitchChange, checked?: boolean) => setAutoPlayWhenIdle((settings.autoPlayWhenIdle = checked ?? false))}
 			/>
 			<LunaButtonSetting title="Reconnect to Streamer.bot" desc="Reconnect after changing connection settings." onClick={reconnect} />
-			<LunaButtonSetting title="Send test chat reply" desc="Send a test message through Streamer.bot using the configured bot account." onClick={() => sendTestReply()} />
+			<LunaButtonSetting
+				title="Send test chat reply"
+				desc="Send a test message through Streamer.bot using the configured bot account. A popup will show whether Streamer.bot accepted the request."
+				onClick={() => {
+					sendTestReply()
+						.then(() => alert("Streamer.bot accepted the test chat reply request."))
+						.catch((error) => alert(`Streamer.bot test chat reply failed: ${error instanceof Error ? error.message : String(error)}`));
+				}}
+			/>
 		</LunaSettings>
 	);
 };

@@ -77,9 +77,9 @@ export const Settings = () => {
 			/>
 			<LunaTextSetting
 				title="Request command"
-				desc="Chat command used for song requests."
+				desc="Chat command used for song requests. The default !sr remains available as an alias; separate multiple commands with spaces or commas."
 				value={command}
-				onChange={(event: TextChange) => setCommand((settings.command = event.target.value))}
+				onChange={(event: TextChange) => setCommand((settings.command = event.target.value.trim()))}
 			/>
 			<LunaNumberSetting
 				title="Max song length"

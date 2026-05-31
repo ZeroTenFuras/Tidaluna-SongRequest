@@ -31,22 +31,45 @@ export async function resolveTrack(input: string): Promise<ResolvedTrack | undef
 	return toResolvedTrack(mediaItem?.tidalItem ?? track);
 }
 
-export async function addTrackToQueue(track: ResolvedTrack) {
+export async function addTrackToQueue(track: ResolvedTrack, pendingRequestQueueUids: string[] = []) {
 	await MediaItem.fromId(track.id, "track");
 
 	if (settings.autoPlayWhenIdle && isPlayerIdle()) {
 		trace.msg.log(`Starting requested track ${track.id} because the player is idle.`);
 		PlayState.play(track.id);
-		return;
+		return undefined;
 	}
 
-	trace.msg.log(`Adding requested track ${track.id} to the TIDAL queue.`);
-	PlayState.playNext(track.id);
+	const beforeUids = new Set(PlayState.playQueue.elements.map((element) => element.uid));
+	const insertIndex = getRequestInsertIndex(pendingRequestQueueUids);
+	trace.msg.log(`Adding requested track ${track.id} to the TIDAL queue at index ${insertIndex}.`);
+	redux.actions["playQueue/ADD_AT_INDEX"]({
+		context: { type: "search" },
+		mediaItemIds: [track.id],
+		index: insertIndex,
+	});
+
+	await Promise.resolve();
+	const queuedElement = PlayState.playQueue.elements.find((element) => !beforeUids.has(element.uid) && String(element.mediaItemId) === String(track.id));
+	if (queuedElement === undefined) trace.msg.warn(`Could not determine queue uid for requested track ${track.id}. FIFO ordering may be less accurate for the next request.`);
+	return queuedElement?.uid;
 }
 
-export function isTrackInQueue(trackId: redux.ItemId) {
-	const id = String(trackId);
-	return PlayState.playQueue.elements.some((element: redux.PlayQueueElement) => String(element.mediaItemId) === id);
+export function isQueueUidInQueue(queueUid: string) {
+	return PlayState.playQueue.elements.some((element) => element.uid === queueUid);
+}
+
+
+function getRequestInsertIndex(pendingRequestQueueUids: string[]) {
+	const { currentIndex, elements } = PlayState.playQueue;
+	let insertIndex = Math.max(0, currentIndex + 1);
+
+	for (const queueUid of pendingRequestQueueUids) {
+		const requestIndex = elements.findIndex((element) => element.uid === queueUid);
+		if (requestIndex >= insertIndex) insertIndex = requestIndex + 1;
+	}
+
+	return insertIndex;
 }
 
 export function formatDuration(seconds: number) {

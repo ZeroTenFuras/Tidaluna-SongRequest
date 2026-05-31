@@ -2,13 +2,14 @@ import { redux } from "@luna/lib";
 
 import { defaultSettings, settings } from "./storage";
 import type { TwitchChatMessage } from "./streamerBot";
-import { addTrackToQueue, formatDuration, isTrackInQueue, resolveTrack, type ResolvedTrack } from "./tidal";
+import { addTrackToQueue, formatDuration, isQueueUidInQueue, resolveTrack, type ResolvedTrack } from "./tidal";
 import { trace } from "./trace";
 
 type ReplySender = (message: string) => Promise<void> | void;
 
 type QueuedRequest = {
 	trackId: redux.ItemId;
+	queueUid?: string;
 	userKey: string;
 	userName: string;
 	trackTitle: string;
@@ -49,7 +50,7 @@ async function handleChatMessage(message: TwitchChatMessage, reply: ReplySender)
 	const userName = message.user?.name ?? message.user?.login ?? "viewer";
 	const userKey = message.user?.id ?? message.user?.login ?? userName;
 
-	pruneRequestsNoLongerQueued();
+	pruneRequestsNoLongerPending();
 	if (isUserAtRequestLimit(userKey)) {
 		await safeReply(reply, `@${userName}, you already have ${settings.maxRequestsPerUser} song request(s) waiting in the queue.`);
 		return;
@@ -71,9 +72,11 @@ async function handleChatMessage(message: TwitchChatMessage, reply: ReplySender)
 			return;
 		}
 
-		await addTrackToQueue(track);
+		const queueUid = await addTrackToQueue(track, getPendingRequestQueueUids());
+		if (queueUid === undefined && !settings.autoPlayWhenIdle) trace.msg.warn(`Request ${track.id} was added without a queue uid.`);
 		requestQueue.push({
 			trackId: track.id,
+			queueUid,
 			userKey,
 			userName,
 			trackTitle: track.title,
@@ -115,10 +118,15 @@ function getTrackRejection(track: ResolvedTrack) {
 	return undefined;
 }
 
-function pruneRequestsNoLongerQueued() {
+function pruneRequestsNoLongerPending() {
 	for (let index = requestQueue.length - 1; index >= 0; index--) {
-		if (!isTrackInQueue(requestQueue[index].trackId)) requestQueue.splice(index, 1);
+		const { queueUid } = requestQueue[index];
+		if (queueUid !== undefined && !isQueueUidInQueue(queueUid)) requestQueue.splice(index, 1);
 	}
+}
+
+function getPendingRequestQueueUids() {
+	return requestQueue.map((request) => request.queueUid).filter((queueUid): queueUid is string => queueUid !== undefined);
 }
 
 function isUserAtRequestLimit(userKey: string) {
@@ -128,7 +136,7 @@ function isUserAtRequestLimit(userKey: string) {
 
 function isDuplicate(trackId: redux.ItemId) {
 	const id = String(trackId);
-	return requestQueue.some((request) => String(request.trackId) === id) || isTrackInQueue(trackId);
+	return requestQueue.some((request) => String(request.trackId) === id);
 }
 
 async function safeReply(reply: ReplySender, message: string) {

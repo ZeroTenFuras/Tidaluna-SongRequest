@@ -55,7 +55,7 @@ Po instalacji otworz **Luna Settings -> Tidaluna Song Request**:
 - **Max song length** - limit w sekundach; `0` wylacza limit.
 - **Max queued requests per user** - limit oczekujacych requestow; `0` wylacza limit.
 - **Send chat replies** - wysyla komunikaty powodzenia/bledu na chat przez skonfigurowany bot account w streamer.bot. Przycisk **Send test chat reply** pozwala sprawdzic samo wysylanie przez Streamer.bot bez requestowania utworu i pokazuje konkretny blad auth, jesli brakuje hasla WebSocket.
-- **Allow duplicate requests** - pozwala requestowac ten sam utwor ponownie.
+- **Allow duplicate requests** - pozwala requestowac ten sam utwor ponownie. Gdy opcja jest wylaczona, duplikaty sa sprawdzane tylko w kolejce requestow pluginu, nie w zwyklej playliscie TIDAL-a.
 - **Auto-play when idle** - startuje pierwszy request, gdy TIDAL nic nie gra.
 
 ## Przyklady uzycia

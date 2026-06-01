@@ -12,6 +12,8 @@ widzom Twitcha dodawac piosenki z TIDAL-a do kolejki komenda na chacie.
 - opcjonalne auto-play, kiedy kolejka TIDAL-a jest pusta;
 - limity maksymalnej dlugosci utworu i liczby oczekujacych requestow per user;
 - blokowanie duplikatow w kolejce requestow;
+- komenda moderatora do usuwania pending requestow po uzytkowniku albo fragmencie utworu;
+- komenda `!wrongsong` do usuwania wlasnego najnowszego pending requestu;
 - opcjonalne odpowiedzi na Twitch chat przez `SendMessage` streamer.bot, wysylane domyslnie skonfigurowanym bot account.
 
 ## Konfiguracja streamer.bot
@@ -52,6 +54,8 @@ Po instalacji otworz **Luna Settings -> Tidaluna Song Request**:
 - **Streamer.bot host/port/endpoint** - dane WebSocket Server.
 - **Streamer.bot password** - haslo WebSocket, jesli jest wlaczone.
 - **Request command** - domyslnie `!sr`; po wpisaniu np. `!srt` aktywna bedzie tylko `!srt`. Jesli chcesz aliasy, wpisz kilka komend rozdzielonych spacja albo przecinkiem, np. `!srt !sr`.
+- **Moderator remove command** - domyslnie `!remove`; tylko moderator/broadcaster moze usunac pending request po loginie/nazwie uzytkownika albo fragmencie tytulu/artysty.
+- **Wrong song command** - domyslnie `!wrongsong`; kazdy widz moze usunac tylko swoj najnowszy pending request.
 - **Max song length** - limit w sekundach; `0` wylacza limit.
 - **Max queued requests per user** - limit oczekujacych requestow; `0` wylacza limit.
 - **Send chat replies** - wysyla komunikaty powodzenia/bledu na chat przez skonfigurowany bot account w streamer.bot. Przycisk **Send test chat reply** pozwala sprawdzic samo wysylanie przez Streamer.bot bez requestowania utworu i pokazuje konkretny blad auth, jesli brakuje hasla WebSocket.
@@ -64,6 +68,9 @@ Po instalacji otworz **Luna Settings -> Tidaluna Song Request**:
 !sr daft punk one more time
 !sr https://tidal.com/track/123456
 !sr 123456
+!wrongsong
+!remove viewer_login
+!remove suspicious title fragment
 ```
 
 ## Development

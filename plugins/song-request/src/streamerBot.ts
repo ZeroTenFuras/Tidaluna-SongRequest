@@ -21,6 +21,9 @@ export type TwitchChatMessage = {
 		id?: string | null;
 		login?: string | null;
 		name?: string | null;
+		type?: string | null;
+		role?: number | null;
+		badges?: Array<{ name?: string | null }> | null;
 	} | null;
 };
 

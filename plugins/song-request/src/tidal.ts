@@ -49,16 +49,29 @@ export async function addTrackToQueue(track: ResolvedTrack, pendingRequestQueueU
 		index: insertIndex,
 	});
 
-	await Promise.resolve();
-	const queuedElement = PlayState.playQueue.elements.find((element) => !beforeUids.has(element.uid) && String(element.mediaItemId) === String(track.id));
+	const queuedElement = await waitForQueuedElement(track.id, beforeUids);
 	if (queuedElement === undefined) trace.msg.warn(`Could not determine queue uid for requested track ${track.id}. FIFO ordering may be less accurate for the next request.`);
 	return queuedElement?.uid;
+}
+
+async function waitForQueuedElement(trackId: redux.ItemId, beforeUids: Set<string>) {
+	for (let attempt = 0; attempt < 10; attempt++) {
+		const queuedElement = PlayState.playQueue.elements.find((element) => !beforeUids.has(element.uid) && String(element.mediaItemId) === String(trackId));
+		if (queuedElement !== undefined) return queuedElement;
+		await new Promise((resolve) => setTimeout(resolve, 50));
+	}
+	return undefined;
 }
 
 export function isQueueUidInQueue(queueUid: string) {
 	return PlayState.playQueue.elements.some((element) => element.uid === queueUid);
 }
 
+export function removeQueueUid(queueUid: string) {
+	if (!isQueueUidInQueue(queueUid)) return false;
+	redux.actions["playQueue/REMOVE_ELEMENT"]({ uid: queueUid });
+	return true;
+}
 
 function getRequestInsertIndex(pendingRequestQueueUids: string[]) {
 	const { currentIndex, elements } = PlayState.playQueue;

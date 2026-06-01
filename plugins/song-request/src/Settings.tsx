@@ -20,6 +20,8 @@ export const Settings = () => {
 	const [endpoint, setEndpoint] = React.useState(settings.endpoint);
 	const [password, setPassword] = React.useState(settings.password);
 	const [command, setCommand] = React.useState(settings.command);
+	const [removeCommand, setRemoveCommand] = React.useState(settings.removeCommand);
+	const [wrongSongCommand, setWrongSongCommand] = React.useState(settings.wrongSongCommand);
 	const [chatReplies, setChatReplies] = React.useState(settings.chatReplies);
 	const [allowDuplicates, setAllowDuplicates] = React.useState(settings.allowDuplicates);
 	const [autoPlayWhenIdle, setAutoPlayWhenIdle] = React.useState(settings.autoPlayWhenIdle);
@@ -80,6 +82,18 @@ export const Settings = () => {
 				desc="Chat command used for song requests. Separate multiple commands with spaces or commas if you want aliases."
 				value={command}
 				onChange={(event: TextChange) => setCommand((settings.command = event.target.value.trim()))}
+			/>
+			<LunaTextSetting
+				title="Moderator remove command"
+				desc="Moderator/broadcaster-only command for removing a pending request by user/login or song title fragment."
+				value={removeCommand}
+				onChange={(event: TextChange) => setRemoveCommand((settings.removeCommand = event.target.value.trim()))}
+			/>
+			<LunaTextSetting
+				title="Wrong song command"
+				desc="Viewer command that removes only that viewer's latest pending request."
+				value={wrongSongCommand}
+				onChange={(event: TextChange) => setWrongSongCommand((settings.wrongSongCommand = event.target.value.trim()))}
 			/>
 			<LunaNumberSetting
 				title="Max song length"

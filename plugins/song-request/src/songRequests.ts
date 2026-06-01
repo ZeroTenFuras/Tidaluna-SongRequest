@@ -2,7 +2,7 @@ import { redux } from "@luna/lib";
 
 import { defaultSettings, settings } from "./storage";
 import type { TwitchChatMessage } from "./streamerBot";
-import { addTrackToQueue, formatDuration, isQueueUidInQueue, resolveTrack, type ResolvedTrack } from "./tidal";
+import { addTrackToQueue, formatDuration, isQueueUidInQueue, removeQueueUid, resolveTrack, type ResolvedTrack } from "./tidal";
 import { trace } from "./trace";
 
 type ReplySender = (message: string) => Promise<void> | void;
@@ -15,6 +15,11 @@ type QueuedRequest = {
 	trackTitle: string;
 	artists: string;
 	addedAt: number;
+};
+
+type ParsedCommand = {
+	command: string;
+	query: string;
 };
 
 const requestQueue: QueuedRequest[] = [];
@@ -37,7 +42,24 @@ async function handleChatMessage(message: TwitchChatMessage, reply: ReplySender)
 	const text = getMessageText(message)?.trim();
 	if (!text) return;
 
-	const request = parseRequestMessage(text);
+	const userName = message.user?.name ?? message.user?.login ?? "viewer";
+	const userKey = getUserKey(message, userName);
+
+	pruneRequestsNoLongerPending();
+
+	const wrongSongCommand = parseCommandMessage(text, getWrongSongCommands());
+	if (wrongSongCommand !== undefined) {
+		await handleWrongSongCommand(wrongSongCommand, userKey, userName, reply);
+		return;
+	}
+
+	const removeCommand = parseCommandMessage(text, getRemoveCommands());
+	if (removeCommand !== undefined) {
+		await handleRemoveCommand(removeCommand, message, userName, reply);
+		return;
+	}
+
+	const request = parseCommandMessage(text, getRequestCommands());
 	if (request === undefined) return;
 
 	const { command, query } = request;
@@ -47,10 +69,6 @@ async function handleChatMessage(message: TwitchChatMessage, reply: ReplySender)
 		return;
 	}
 
-	const userName = message.user?.name ?? message.user?.login ?? "viewer";
-	const userKey = message.user?.id ?? message.user?.login ?? userName;
-
-	pruneRequestsNoLongerPending();
 	if (isUserAtRequestLimit(userKey)) {
 		await safeReply(reply, `@${userName}, you already have ${settings.maxRequestsPerUser} song request(s) waiting in the queue.`);
 		return;
@@ -73,16 +91,19 @@ async function handleChatMessage(message: TwitchChatMessage, reply: ReplySender)
 		}
 
 		const queueUid = await addTrackToQueue(track, getPendingRequestQueueUids());
-		if (queueUid === undefined && !settings.autoPlayWhenIdle) trace.msg.warn(`Request ${track.id} was added without a queue uid.`);
-		requestQueue.push({
-			trackId: track.id,
-			queueUid,
-			userKey,
-			userName,
-			trackTitle: track.title,
-			artists: track.artists,
-			addedAt: Date.now(),
-		});
+		if (queueUid !== undefined) {
+			requestQueue.push({
+				trackId: track.id,
+				queueUid,
+				userKey,
+				userName,
+				trackTitle: track.title,
+				artists: track.artists,
+				addedAt: Date.now(),
+			});
+		} else {
+			trace.msg.log(`Request ${track.id} is not pending in the plugin queue.`);
+		}
 
 		await safeReply(reply, `@${userName}, added "${track.title}" by ${track.artists} to the TIDAL queue.`);
 	} catch (error) {
@@ -102,6 +123,99 @@ function getMessageText(message: TwitchChatMessage) {
 		.join("")
 		.trim();
 	return partsText || undefined;
+}
+
+
+async function handleWrongSongCommand(command: ParsedCommand, userKey: string, userName: string, reply: ReplySender) {
+	const request = findLatestOwnRequest(userKey);
+	if (request === undefined) {
+		await safeReply(reply, `@${userName}, you do not have any pending song request to remove.`);
+		return;
+	}
+
+	const removed = removeQueuedRequest(request);
+	if (!removed) {
+		await safeReply(reply, `@${userName}, I could not remove your latest request because it is no longer pending.`);
+		return;
+	}
+
+	trace.msg.log(`${userName} removed own request ${request.trackId} with ${command.command}.`);
+	await safeReply(reply, `@${userName}, removed your request: "${request.trackTitle}" by ${request.artists}.`);
+}
+
+async function handleRemoveCommand(command: ParsedCommand, message: TwitchChatMessage, userName: string, reply: ReplySender) {
+	if (!isModerator(message)) {
+		await safeReply(reply, `@${userName}, only moderators can remove other users' song requests.`);
+		return;
+	}
+
+	if (!command.query) {
+		await safeReply(reply, `Usage: ${command.command} user/login or song title fragment`);
+		return;
+	}
+
+	const request = findModerationRemovalRequest(command.query);
+	if (request === undefined) {
+		await safeReply(reply, `@${userName}, I could not find a pending request matching "${command.query}".`);
+		return;
+	}
+
+	const removed = removeQueuedRequest(request);
+	if (!removed) {
+		await safeReply(reply, `@${userName}, I found that request but could not remove it because it is no longer pending.`);
+		return;
+	}
+
+	trace.msg.log(`${userName} removed request ${request.trackId} from ${request.userName} with ${command.command}.`);
+	await safeReply(reply, `@${userName}, removed ${request.userName}'s request: "${request.trackTitle}" by ${request.artists}.`);
+}
+
+function findLatestOwnRequest(userKey: string) {
+	for (let index = requestQueue.length - 1; index >= 0; index--) {
+		const request = requestQueue[index];
+		if (request.userKey === userKey) return request;
+	}
+	return undefined;
+}
+
+function findModerationRemovalRequest(query: string) {
+	const needle = normalizeLookup(query.replace(/^@/, ""));
+	if (!needle) return undefined;
+
+	return requestQueue.find((request) => {
+		const haystacks = [request.userName, request.userKey, request.trackTitle, request.artists, `${request.trackTitle} ${request.artists}`];
+		return haystacks.some((value) => normalizeLookup(String(value)).includes(needle));
+	});
+}
+
+function removeQueuedRequest(request: QueuedRequest) {
+	const index = requestQueue.indexOf(request);
+	if (index >= 0) requestQueue.splice(index, 1);
+
+	if (request.queueUid === undefined) return false;
+	return removeQueueUid(request.queueUid);
+}
+
+function isModerator(message: TwitchChatMessage) {
+	const user = message.user;
+	if (user === undefined || user === null) return false;
+
+	const type = user.type?.toLowerCase();
+	if (type === "moderator" || type === "broadcaster") return true;
+	if (typeof user.role === "number" && user.role >= 3) return true;
+
+	return user.badges?.some((badge) => {
+		const name = badge.name?.toLowerCase();
+		return name === "moderator" || name === "broadcaster";
+	}) ?? false;
+}
+
+function getUserKey(message: TwitchChatMessage, fallbackName: string) {
+	return message.user?.id ?? message.user?.login ?? fallbackName;
+}
+
+function normalizeLookup(value: string) {
+	return normalizeWhitespace(value).toLowerCase();
 }
 
 function getTrackRejection(track: ResolvedTrack) {
@@ -144,12 +258,12 @@ async function safeReply(reply: ReplySender, message: string) {
 	await Promise.resolve(reply(message)).catch(trace.err.withContext("Send Streamer.bot chat reply"));
 }
 
-function parseRequestMessage(text: string) {
+function parseCommandMessage(text: string, commands: string[]): ParsedCommand | undefined {
 	const match = normalizeWhitespace(text).match(/^(\S+)(?:\s+([\s\S]*))?$/);
 	if (!match) return undefined;
 
 	const messageCommand = normalizeCommandToken(match[1]);
-	const command = getRequestCommands().find((configuredCommand) => normalizeCommandToken(configuredCommand) === messageCommand);
+	const command = commands.find((configuredCommand) => normalizeCommandToken(configuredCommand) === messageCommand);
 	if (command === undefined) return undefined;
 
 	return {
@@ -159,8 +273,20 @@ function parseRequestMessage(text: string) {
 }
 
 function getRequestCommands() {
-	const commands = parseCommands(settings.command);
-	return commands.length > 0 ? [...new Set(commands)] : [defaultSettings.command];
+	return getConfiguredCommands(settings.command, defaultSettings.command);
+}
+
+function getRemoveCommands() {
+	return getConfiguredCommands(settings.removeCommand, defaultSettings.removeCommand);
+}
+
+function getWrongSongCommands() {
+	return getConfiguredCommands(settings.wrongSongCommand, defaultSettings.wrongSongCommand);
+}
+
+function getConfiguredCommands(commandValue: string | undefined, defaultCommand: string) {
+	const commands = parseCommands(commandValue);
+	return commands.length > 0 ? [...new Set(commands)] : [defaultCommand];
 }
 
 function parseCommands(commandValue: string | undefined) {

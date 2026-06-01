@@ -7,6 +7,8 @@ export const defaultSettings = {
 	endpoint: "/",
 	password: "",
 	command: "!sr",
+	removeCommand: "!remove",
+	wrongSongCommand: "!wrongsong",
 	maxDurationSeconds: 600,
 	maxRequestsPerUser: 2,
 	allowDuplicates: false,

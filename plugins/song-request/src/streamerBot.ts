@@ -17,6 +17,14 @@ export type TwitchChatMessage = {
 	input?: unknown;
 	messageId?: string | null;
 	parts?: Array<{ text?: unknown }> | null;
+	isInSharedChat?: boolean | null;
+	isSharedChatHost?: boolean | null;
+	isFromSharedChatGuest?: boolean | null;
+	sharedChatSource?: {
+		id?: string | null;
+		login?: string | null;
+		name?: string | null;
+	} | null;
 	user?: {
 		id?: string | null;
 		login?: string | null;

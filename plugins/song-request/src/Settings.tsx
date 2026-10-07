@@ -22,6 +22,7 @@ export const Settings = () => {
 	const [command, setCommand] = React.useState(settings.command);
 	const [removeCommand, setRemoveCommand] = React.useState(settings.removeCommand);
 	const [wrongSongCommand, setWrongSongCommand] = React.useState(settings.wrongSongCommand);
+	const [ignoreSharedChatGuestMessages, setIgnoreSharedChatGuestMessages] = React.useState(settings.ignoreSharedChatGuestMessages);
 	const [chatReplies, setChatReplies] = React.useState(settings.chatReplies);
 	const [allowDuplicates, setAllowDuplicates] = React.useState(settings.allowDuplicates);
 	const [autoPlayWhenIdle, setAutoPlayWhenIdle] = React.useState(settings.autoPlayWhenIdle);
@@ -94,6 +95,12 @@ export const Settings = () => {
 				desc="Viewer command that removes only that viewer's latest pending request."
 				value={wrongSongCommand}
 				onChange={(event: TextChange) => setWrongSongCommand((settings.wrongSongCommand = event.target.value.trim()))}
+			/>
+			<LunaSwitchSetting
+				title="Ignore shared chat guest messages"
+				desc="Ignore commands that come from guest channels in Twitch shared chat / shared broadcast chats."
+				checked={ignoreSharedChatGuestMessages}
+				onChange={(_: SwitchChange, checked?: boolean) => setIgnoreSharedChatGuestMessages((settings.ignoreSharedChatGuestMessages = checked ?? false))}
 			/>
 			<LunaNumberSetting
 				title="Max song length"

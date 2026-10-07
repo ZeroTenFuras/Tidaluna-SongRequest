@@ -9,6 +9,7 @@ export const defaultSettings = {
 	command: "!sr",
 	removeCommand: "!remove",
 	wrongSongCommand: "!wrongsong",
+	ignoreSharedChatGuestMessages: true,
 	maxDurationSeconds: 600,
 	maxRequestsPerUser: 2,
 	allowDuplicates: false,

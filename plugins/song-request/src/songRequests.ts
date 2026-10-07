@@ -38,6 +38,7 @@ export function markTrackStarted(trackId: redux.ItemId) {
 
 async function handleChatMessage(message: TwitchChatMessage, reply: ReplySender) {
 	if (!settings.enabled) return;
+	if (shouldIgnoreSharedChatMessage(message)) return;
 
 	const text = getMessageText(message)?.trim();
 	if (!text) return;
@@ -112,6 +113,18 @@ async function handleChatMessage(message: TwitchChatMessage, reply: ReplySender)
 	}
 }
 
+
+
+function shouldIgnoreSharedChatMessage(message: TwitchChatMessage) {
+	if (!settings.ignoreSharedChatGuestMessages) return false;
+
+	const isGuestMessage = message.isFromSharedChatGuest === true || (message.isInSharedChat === true && message.isSharedChatHost === false);
+	if (!isGuestMessage) return false;
+
+	const source = message.sharedChatSource?.login ?? message.sharedChatSource?.name ?? "unknown shared chat";
+	trace.msg.log(`Ignoring shared chat guest message from ${source}.`);
+	return true;
+}
 
 function getMessageText(message: TwitchChatMessage) {
 	for (const value of [message.text, message.message, message.rawInput, message.input]) {
